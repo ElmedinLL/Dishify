@@ -41,7 +41,7 @@ namespace Dishify_API.Controllers
                 return BadRequest(_response);
             }
 
-            MenuItem menuItem = _db.MenuItems.FirstOrDefault(e => e.Id == id);
+            MenuItem ?menuItem = _db.MenuItems.FirstOrDefault(e => e.Id == id);
             _response.Result = menuItem;
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
