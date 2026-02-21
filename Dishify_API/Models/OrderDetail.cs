@@ -25,5 +25,6 @@ namespace Dishify_API.Models
         public string ItemName { get; set; } = string.Empty;
         [Required]
         public double Price { get; set; }
+        public int? Rating { get; set; } = null;
     }
 }
