@@ -14,9 +14,9 @@ public class OrderHeaderCreateDTO
 
         public string ApplicationUserId { get; set; }= string.Empty;
 
-        public DateTime OrderDate { get; set; }
+
         public double OrderTotal { get; set; }
-        public string Status { get; set; } = string.Empty;
+  
         public int TotalItems { get; set; }
 
         public List<OrderDetailCreateDTO> OrderDetailsDTO { get; set; } = new();

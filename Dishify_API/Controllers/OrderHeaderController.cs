@@ -81,13 +81,14 @@ namespace Dishify_API.Controllers
             {
               if (ModelState.IsValid)
               {
+               
                 
                   OrderHeader orderHeader = new OrderHeader()
                 {
                     ApplicationUserId = orderHeaderDTO.ApplicationUserId,
                     PickUpEmail = orderHeaderDTO.PickUpEmail,
                     PickUpName = orderHeaderDTO.PickUpName,
-                    OrderDate = DateTime.Now,   
+                  
                     PickUpPhoneNumber = orderHeaderDTO.PickUpPhoneNumber,
                     OrderTotal = orderHeaderDTO.OrderTotal,
                     Status = SD.status_completed,
@@ -136,7 +137,107 @@ namespace Dishify_API.Controllers
             }
             
         }
-}
+
+
+        [HttpPut("{orderId:int}")]
+        public ActionResult<ApiResponse> UpdateOrder(int orderId ,[FromBody] OrderHeaderUpdateDTO orderHeaderDTO)
+        {
+           
+           try{
+            
+                if (ModelState.IsValid)
+                {
+                     if (orderId != orderHeaderDTO.OrderHeaderId)
+                {
+                    _apiResponse.isSuccess = false;
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    _apiResponse.ErrorMessages.Add("Order ID does not match");
+                    return BadRequest(_apiResponse);    
+                }
+                    OrderHeader? orderHeaderFromDb = _db.OrderHeaders.FirstOrDefault(u=>u.OrderHeaderId == orderId);
+
+                    if (orderHeaderFromDb == null)
+                    {
+                        _apiResponse.isSuccess = false;
+                        _apiResponse.StatusCode = HttpStatusCode.NotFound;
+                        _apiResponse.ErrorMessages.Add("Order not found");
+                        return NotFound(_apiResponse);
+                        
+                    }
+
+                    if (!string.IsNullOrEmpty(orderHeaderDTO.PickUpName))
+                    {
+                        orderHeaderFromDb.PickUpName = orderHeaderDTO.PickUpName;
+                    }
+                    
+                    if (!string.IsNullOrEmpty(orderHeaderDTO.PickUpPhoneNumber))
+                        {
+                            orderHeaderFromDb.PickUpPhoneNumber = orderHeaderDTO.PickUpPhoneNumber;
+                        }
+                        if (!string.IsNullOrEmpty(orderHeaderDTO.PickUpEmail))
+                        {
+                            orderHeaderFromDb.PickUpEmail = orderHeaderDTO.PickUpEmail;
+                        }   
+                        if(!string.IsNullOrEmpty(orderHeaderDTO.Status))
+                        {
+                           if (orderHeaderFromDb.Status.Equals(SD.status_confirmed , StringComparison.InvariantCultureIgnoreCase)
+                           && orderHeaderDTO.Status.Equals(SD.status_readyForPickUp,StringComparison.InvariantCultureIgnoreCase))
+                           {
+                            orderHeaderFromDb.Status = SD.status_readyForPickUp;
+                           }
+                         
+                          if (orderHeaderFromDb.Status.Equals(SD.status_readyForPickUp , StringComparison.InvariantCultureIgnoreCase)
+                           && orderHeaderDTO.Status.Equals(SD.status_completed,StringComparison.InvariantCultureIgnoreCase))
+                           {
+                            orderHeaderFromDb.Status = SD.status_completed;
+                           }
+                           if (orderHeaderDTO.Status.Equals(SD.status_cancelled,StringComparison.InvariantCultureIgnoreCase)    )
+                           {
+                            orderHeaderFromDb.Status = SD.status_cancelled;
+                           }
+                        }
+                      
+                        _db.SaveChanges();
+
+
+
+           
+             
+                _apiResponse.StatusCode = HttpStatusCode.NoContent;
+                _apiResponse.isSuccess = true;
+                return Ok(_apiResponse);
+               
+               
+              }
+               
+                else{
+                    _apiResponse.isSuccess = false;
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    _apiResponse.ErrorMessages = ModelState.Values.SelectMany(u=>u.Errors).Select(u=>u.ErrorMessage).ToList();
+                    return BadRequest(_apiResponse);
+                }
+            } 
+            
+            
+            catch (Exception ex)
+            {
+                _apiResponse.isSuccess = false;
+                _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+                _apiResponse.ErrorMessages.Add(ex.Message);
+                return BadRequest(_apiResponse);
+            }
+            
+        }
+
+                }
+
+
+
+
+
+
+
+
 }
 
 
