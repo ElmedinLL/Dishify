@@ -7,7 +7,7 @@ import Register from "../pages/auth/Register";
 import Cart from "../pages/cart/Cart";
 import Checkout from "../pages/cart//Checkout";
 import OrderConfirmation from "../pages/order/OrderConfirmation";
-import MenuManagement from "../pages/menu/MenuItemManagement";
+import MenuManagement from "../pages/menuItem/MenuItemManagement";
 import OrderManagement from "../pages/order/OrderManagement";
 
 
