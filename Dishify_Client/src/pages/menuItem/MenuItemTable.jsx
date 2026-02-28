@@ -1,36 +1,47 @@
-import { API_BASE_URL } from "../../utility/constants"
+import { getImageUrl } from "../../utility/constants"
 
-
-export default function MenuItemTable({menuItems,error,isLoading}) {
- if (isLoading) {
-  
-return(
-   <div className="text-center py-4">
+export default function MenuItemTable({
+  menuItems,
+  error,
+  isLoading,
+  onEdit,
+  onDelete,
+}) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-4">
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
         <p className="mt-2">Loading menu items...</p>
       </div>
-)
- }
- if (error) {
-  return(<div className="alert alert-danger">
+    )
+  }
+  if (error) {
+    return (
+      <div className="alert alert-danger">
         <h5>Error Loading Menu Items</h5>
         <p>An error occurred while loading menu items.</p>
-      </div>)
- }
+      </div>
+    )
+  }
 
-      
-if (!menuItems?.length) {
-  return ( <div className="text-center py-5">
-        <i className="bi bi-basket text-muted" style={{ fontSize: "3rem" }}></i>
+  if (!menuItems?.length) {
+    return (
+      <div className="text-center py-5">
+        <i
+          className="bi bi-basket text-muted"
+          style={{ fontSize: "3rem" }}
+        ></i>
         <h4 className="mt-3 text-muted">No Menu Items</h4>
         <p className="text-muted">Start by adding your first menu item.</p>
-      </div>)
-}
-     
-return (<>
-<div className="table-responsive">
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="table-responsive">
         <table className="table table-hover">
           <thead className="table-dark">
             <tr>
@@ -43,64 +54,62 @@ return (<>
             </tr>
           </thead>
           <tbody>
-            {menuItems.map((item ) =>(
-             <tr key={item.id}>
-              <td>
-
-                {console.log(JSON.stringify(item.image))}
-
-                <img
-                  src={`${API_BASE_URL}/${item.image}`}
-                  className="rounded"
-                  style={{
-                    width: "50px",
-                    height: "50px",
-                    objectFit: "cover",
-                  }}
-                  onError={(e)=>{
-                    e.target.src = "https://placehold.co/100"
-                  }}
-                />
-              </td>
-              <td>
-                <strong>{item.name}</strong>
-                <br />
-                <small className="text-muted">{item.description}</small>
-              </td>
-              <td>
-                <span className="badge bg-secondary">{item.category}</span>
-              </td>
-              <td>
-                <strong>${item.price.toFixed(2)}</strong>
-              </td>
-              <td>
-                <span className="badge bg-warning text-dark">{item.specialTag}</span>
-              </td>
-              <td>
-                <div className="btn-group" role="group">
-                  <button
-                    className="btn btn-sm btn-outline-success"
-                    title="Edit"
-                  >
-                    <i className="bi bi-pencil"></i>
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    title="Delete"
-                  >
-                    <i className="bi bi-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
+            {menuItems.map((item) => (
+              <tr key={item.id}>
+                <td>
+                  <img
+                    src={getImageUrl(item.image)}
+                    className="rounded"
+                    style={{
+                      width: "50px",
+                      height: "50px",
+                      objectFit: "cover",
+                    }}
+                    onError={(e) => {
+                      e.target.src = "https://placehold.co/100"
+                    }}
+                    alt={item.name}
+                  />
+                </td>
+                <td>
+                  <strong>{item.name}</strong>
+                  <br />
+                  <small className="text-muted">{item.description}</small>
+                </td>
+                <td>
+                  <span className="badge bg-secondary">{item.category}</span>
+                </td>
+                <td>
+                  <strong>${item.price.toFixed(2)}</strong>
+                </td>
+                <td>
+                  <span className="badge bg-warning text-dark">
+                    {item.specialTag || "-"}
+                  </span>
+                </td>
+                <td>
+                  <div className="btn-group" role="group">
+                    <button
+                      className="btn btn-sm btn-outline-success"
+                      title="Edit"
+                      onClick={() => onEdit?.(item)}
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      title="Delete"
+                      onClick={() => onDelete?.(item)}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
             ))}
-           
           </tbody>
         </table>
       </div>
-   
-</> )
-
-     
-  
+    </>
+  )
 }
