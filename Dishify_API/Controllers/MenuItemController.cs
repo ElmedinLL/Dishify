@@ -1,4 +1,4 @@
-﻿using Dishify_API.Data;
+using Dishify_API.Data;
 using Dishify_API.Models;
 using Dishify_API.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -53,18 +53,20 @@ namespace Dishify_API.Controllers
                 return BadRequest(_response);
             }
 
-            MenuItem ?menuItem = _db.MenuItems.FirstOrDefault(e => e.Id == id);
-              List<OrderDetail> orderDetailsWithRating = _db.OrderDetails.Where
-              (u => u.Rating != null && u.MenuItemId == menuItem.Id).ToList();
+            MenuItem? menuItem = _db.MenuItems.FirstOrDefault(e => e.Id == id);
+            if (menuItem == null)
+            {
+                _response.StatusCode = HttpStatusCode.NotFound;
+                _response.isSuccess = false;
+                return NotFound(_response);
+            }
 
-        
-            
-                var rating = orderDetailsWithRating.Select(u => u.Rating.Value);
-              
-                 double avgRating = rating.Any() ? rating.Average() : 0;
-                menuItem.Rating = avgRating;
-                
-          
+            var orderDetailsWithRating = _db.OrderDetails
+                .Where(u => u.Rating != null && u.MenuItemId == menuItem.Id)
+                .ToList();
+            var ratings = orderDetailsWithRating.Select(u => u.Rating!.Value);
+            menuItem.Rating = ratings.Any() ? ratings.Average() : 0;
+
             _response.Result = menuItem;
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
@@ -147,7 +149,7 @@ namespace Dishify_API.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    if (menuItemUpdateDTO.File == null || menuItemUpdateDTO.Id != id)
+                    if (menuItemUpdateDTO.Id != id)
                     {
                         _response.isSuccess = false;
                         _response.StatusCode = HttpStatusCode.BadRequest;
