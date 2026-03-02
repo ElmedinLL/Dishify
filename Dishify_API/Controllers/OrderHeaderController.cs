@@ -31,7 +31,12 @@ namespace Dishify_API.Controllers
 
     public ActionResult<ApiResponse> GetOrders(string userId ="")
     {
-      
+        // When userId is empty, try to get from JWT (for customers viewing their orders)
+        if (string.IsNullOrEmpty(userId) && User?.Identity?.IsAuthenticated == true)
+        {
+            userId = User.FindFirst("id")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+        }
+
       IEnumerable<OrderHeader> orderHeadersList = _db.OrderHeaders.Include(u=>u.OrderDetails)
       .ThenInclude(u=>u.MenuItem).OrderByDescending(u=>u.OrderHeaderId);
         if (!string.IsNullOrEmpty(userId))
@@ -46,7 +51,7 @@ namespace Dishify_API.Controllers
     
     }
 
-    [HttpGet("orderId:int")]
+    [HttpGet("{orderId:int}")]
     public ActionResult<ApiResponse> GetOrder(int orderId)
     {
        if (orderId == 0)
@@ -91,7 +96,7 @@ namespace Dishify_API.Controllers
                   
                     PickUpPhoneNumber = orderHeaderDTO.PickUpPhoneNumber,
                     OrderTotal = orderHeaderDTO.OrderTotal,
-                    Status = SD.status_completed,
+                    Status = SD.status_confirmed,
                     TotalItems = orderHeaderDTO.TotalItems
                 };
                 _db.OrderHeaders.Add(orderHeader);
