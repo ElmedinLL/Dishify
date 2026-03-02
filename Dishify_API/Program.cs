@@ -45,7 +45,7 @@ builder.Services.AddAuthentication(options =>
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddOpenApi(options =>options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
-builder.Services.AddSingleton<ApiResponse>();
+builder.Services.AddScoped<ApiResponse>();
 
 
 

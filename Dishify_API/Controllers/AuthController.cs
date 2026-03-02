@@ -1,4 +1,4 @@
-﻿using Azure;
+using Azure;
 using Dishify_API.Models;
 using Dishify_API.Models.Dto;
 using Dishify_API.Utility;
@@ -27,7 +27,7 @@ namespace Dishify_API.Controllers
 
         public AuthController(ApiResponse response, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration)
         {
-            secretKey = configuration.GetValue<string>("ApiSettings:Secret") ?? "";
+            secretKey = configuration.GetValue<string>("Jwt:Key") ?? configuration.GetValue<string>("ApiSettings:Secret") ?? "";
             _response = response;
             _userManager = userManager;
             _roleManager = roleManager;
@@ -43,8 +43,9 @@ namespace Dishify_API.Controllers
                 {
                     Email = model.Email,
                     UserName = model.Email,
-                    Name = model.Name,
-                    NormalizedEmail = model.Email.ToUpper()
+                    NormalizedUserName = model.Email.ToUpperInvariant(),
+                    NormalizedEmail = model.Email.ToUpperInvariant(),
+                    Name = model.Name
                 };
 
                 var result = await _userManager.CreateAsync(newUser, model.Password);
@@ -101,12 +102,17 @@ namespace Dishify_API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
         {
-
-            if (ModelState.IsValid)
+            try
             {
+                if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+                {
+                    _response.isSuccess = false;
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.ErrorMessages.Add("Email and password are required");
+                    return BadRequest(_response);
+                }
 
-
-                var userFromDb = await _userManager.FindByEmailAsync(model.Email);
+                var userFromDb = await _userManager.FindByEmailAsync(model.Email.Trim());
 
                 if (userFromDb != null)
                 {
@@ -120,28 +126,39 @@ namespace Dishify_API.Controllers
                         return BadRequest(_response);
                     }
 
-                    JwtSecurityTokenHandler tokenHandler = new();
-                    byte[] key = Encoding.ASCII.GetBytes(secretKey);
+                    var roles = await _userManager.GetRolesAsync(userFromDb);
+                    var role = roles?.FirstOrDefault() ?? SD.Role_Customer;
 
-                    SecurityTokenDescriptor tokenDescriptor = new()
+                    if (string.IsNullOrEmpty(secretKey) || secretKey.Length < 16)
+                    {
+                        _response.isSuccess = false;
+                        _response.StatusCode = HttpStatusCode.InternalServerError;
+                        _response.ErrorMessages.Add("Server configuration error. Please contact support.");
+                        return StatusCode(500, _response);
+                    }
+
+                    var keyBytes = Encoding.UTF8.GetBytes(secretKey);
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var tokenDescriptor = new SecurityTokenDescriptor
                     {
                         Subject = new ClaimsIdentity([
-                            new ("fullname",userFromDb.Name),
-                            new ("id",userFromDb.Id),
-                            new(ClaimTypes.Email, userFromDb.Email!.ToString()),
-                            new(ClaimTypes.Role , _userManager.GetRolesAsync(userFromDb).Result.FirstOrDefault()!)
-                            ]),
+                            new Claim("fullname", userFromDb.Name ?? ""),
+                            new Claim("id", userFromDb.Id),
+                            new Claim(ClaimTypes.Email, userFromDb.Email ?? ""),
+                            new Claim(ClaimTypes.Role, role)
+                        ]),
                         Expires = DateTime.UtcNow.AddDays(7),
-                        SigningCredentials = new(new SymmetricSecurityKey(key) , SecurityAlgorithms.HmacSha256Signature)
+                        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
                     };
 
-                    SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
+                    var token = tokenHandler.CreateToken(tokenDescriptor);
+                    var tokenString = tokenHandler.WriteToken(token);
 
-                    LoginResponseDTO loginResponse= new()
+                    var loginResponse = new LoginResponseDTO
                     {
-                        Email = userFromDb.Email,
-                        Token = tokenHandler.WriteToken(token),
-                        Role = _userManager.GetRolesAsync(userFromDb).Result.FirstOrDefault()!
+                        Email = userFromDb.Email ?? "",
+                        Token = tokenString,
+                        Role = role
                     };
                     _response.Result = loginResponse;
                     _response.StatusCode = HttpStatusCode.OK;
@@ -152,26 +169,19 @@ namespace Dishify_API.Controllers
                 _response.Result = new LoginResponseDTO();
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.isSuccess = false;
+                _response.ErrorMessages.Add("Invalid email or password");
+                return BadRequest(_response);
             }
-        
-            else
+            catch (Exception ex)
             {
                 _response.isSuccess = false;
-                _response.StatusCode = HttpStatusCode.BadRequest;
-                foreach (var error in ModelState.Values)
-                {
-                    foreach (var errors in error.Errors)
-                    {
-                        _response.ErrorMessages.Add(errors.ErrorMessage);
-                    }
-                }
-
-
-
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.ErrorMessages.Add("An error occurred during login. Please try again.");
+#if DEBUG
+                _response.ErrorMessages.Add(ex.Message);
+#endif
+                return StatusCode(500, _response);
             }
-                return BadRequest(_response);
-
-        
         }
 
     }
