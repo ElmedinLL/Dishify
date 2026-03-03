@@ -2,6 +2,8 @@
 
 A full-stack restaurant ordering application built with React and .NET. Browse menu items, add to cart, place orders, and manage everything from a modern web interface.
 
+![Dishify](https://img.shields.io/badge/Dishify-Restaurant%20Ordering-ff6b6b?style=for-the-badge)
+
 ## Features
 
 - **Menu browsing** — View menu items with images, descriptions, and ratings
